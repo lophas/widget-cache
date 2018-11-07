@@ -2,7 +2,7 @@
 /*
     Plugin Name: Widgetmaster Widget Cache
     Description: Caches widget output in WordPress transient cache.
-    Version: 0.4
+    Version: 0.5
     Plugin URI: https://github.com/lophas/widget-cache
     GitHub Plugin URI: https://github.com/lophas/widget-cache
     Author: Attila Seres
@@ -152,38 +152,28 @@ class widget_cache
         }
 
         $timer_start = microtime(true);
-
         $cache_key = sprintf(self::CACHE_ID.'-%s', $widget->id);
 
         if ($cached_widget = $this->get_cache($cache_key)) {
-            //if(is_super_admin()) echo 'from cache...';
-
-            printf(
-                '<!-- From widget cache start %s --> %s <!-- From widget cache end in %s seconds (%s) -->',
-                $widget->id,
-                apply_filters('widget_content', $cached_widget, $args, $instance, $widget),
-                round(microtime(true) - $timer_start, 4),
-                $cache_key
-            );
+            $comment = '<!-- From widget cache start %s --> %s <!-- From widget cache end in %s seconds (%s) -->';
         } else {
             ob_start();
             $widget->widget($args, $instance);
             $cached_widget = ob_get_clean();
-
-            printf(
-                '<!-- Stored in widget cache start %s --> %s <!-- Stored in widget cache in %s seconds (%s) -->',
+            $this->set_cache(
+              $cache_key,
+              $cached_widget,
+              $cache_time
+            );
+            $comment = '<!-- Stored in widget cache start %s --> %s <!-- Stored in widget cache in %s seconds (%s) -->';
+        }
+        printf(
+                $comment,
                 $widget->id,
                 apply_filters('widget_content', $cached_widget, $args, $instance, $widget),
                 round(microtime(true) - $timer_start, 4),
                 $cache_key
             );
-
-            $this->set_cache(
-                $cache_key,
-                $cached_widget,
-                $cache_time
-            );
-        }
 
 
         return false;// We already echoed the widget, so return false
